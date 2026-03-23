@@ -43,4 +43,11 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
             movies = movies.drop(1)
         }
     }
+    fun vaciarFavoritos() {
+        // Usamos viewModelScope.launch porque borrar en base de datos es una tarea pesada
+        // y hay que hacerla en un "hilo secundario" (en la sombra)
+        viewModelScope.launch {
+            repository.deleteAllMovies()
+        }
+    }
 }

@@ -16,6 +16,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.graphics.Color
 
 @Composable
 // Añadimos un "onMovieClick" para avisar a la brújula de que queremos viajar
@@ -25,12 +30,28 @@ fun FavoritesScreen(viewModel: MovieViewModel, onMovieClick: (Int) -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp)
     ) {
-        Text(
-            text = "Mis Películas Favoritas",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Mis Favoritas",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            // EL BOTÓN DEL PÁNICO
+            IconButton(onClick = { viewModel.vaciarFavoritos() }) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = "Borrar todo",
+                    tint = Color.Red // Papelera roja para que quede claro
+                )
+            }
+        }
 
         if (favoriteMovies.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

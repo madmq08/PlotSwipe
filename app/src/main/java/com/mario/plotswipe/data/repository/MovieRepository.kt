@@ -31,4 +31,6 @@ class MovieRepository(private val database: AppDatabase) {
         database.movieDao().insertMovie(entity)
     }
     fun getAllSavedMovies() = database.movieDao().getAllSavedMovies()
+    suspend fun deleteAllMovies() = database.movieDao().deleteAllMovies()
+
 }
