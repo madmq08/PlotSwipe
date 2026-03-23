@@ -20,6 +20,8 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
     var movies by mutableStateOf<List<MovieDto>>(emptyList())
         private set
 
+    val peliculasFavoritas = repository.getAllSavedMovies()
+
     init {
         loadMovies()
     }

@@ -30,4 +30,5 @@ class MovieRepository(private val database: AppDatabase) {
         // Usamos el DAO para guardarlo en Room
         database.movieDao().insertMovie(entity)
     }
+    fun getAllSavedMovies() = database.movieDao().getAllSavedMovies()
 }

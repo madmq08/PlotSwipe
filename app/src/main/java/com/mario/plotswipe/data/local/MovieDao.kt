@@ -12,4 +12,6 @@ interface MovieDao {
 
     @Query("SELECT * FROM movies")
     suspend fun getAllMovies(): List<MovieEntity>
+    @Query("SELECT * FROM movies")
+    fun getAllSavedMovies(): kotlinx.coroutines.flow.Flow<List<MovieEntity>>
 }
