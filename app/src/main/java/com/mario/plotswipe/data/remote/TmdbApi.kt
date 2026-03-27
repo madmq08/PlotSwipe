@@ -4,10 +4,10 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface TmdbApi {
-    @GET("movie/popular") // Pedimos las películas más populares
+    @GET("movie/popular") // o la ruta que estés usando ("discover/movie", etc.)
     suspend fun getPopularMovies(
         @Query("api_key") apiKey: String,
-        @Query("language") language: String = "es-ES", // Para que nos vengan en español
-        @Query("page") page: Int = 1
+        @Query("language") language: String = "es-ES",
+        @Query("page") page: Int = 1 // 👈 ¡AÑADIMOS ESTO!
     ): MovieResponse
 }

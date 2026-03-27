@@ -9,9 +9,10 @@ import com.mario.plotswipe.data.remote.RetrofitClient
 class MovieRepository(private val database: AppDatabase) {
     private val api = RetrofitClient.api
 
-    suspend fun fetchPopularMovies(): List<MovieDto> {
+    suspend fun fetchPopularMovies(page: Int = 1): List<MovieDto> {
         return try {
-            val response = api.getPopularMovies(RetrofitClient.API_KEY)
+            // ¡Aquí le añadimos el número de página a la llamada de la API!
+            val response = api.getPopularMovies(apiKey = RetrofitClient.API_KEY, page = page)
             response.results
         } catch (e: Exception) {
             emptyList()

@@ -16,6 +16,7 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
     // Ahora el ViewModel sí le pasa la base de datos al Repositorio
     private val database = AppDatabase.getDatabase(application)
     private val repository = MovieRepository(database)
+    private var currentPage = 1
 
     var movies by mutableStateOf<List<MovieDto>>(emptyList())
         private set
@@ -28,7 +29,16 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun loadMovies() {
         viewModelScope.launch {
-            movies = repository.fetchPopularMovies()
+            try {
+                // Le pasamos la página actual al repositorio
+                val nuevasPeliculas = repository.fetchPopularMovies(page = currentPage)
+
+                // En vez de sustituir la lista, AÑADIMOS las nuevas al final de las que ya teníamos
+                movies = movies + nuevasPeliculas
+
+            } catch (e: Exception) {
+                // Manejo de errores...
+            }
         }
     }
 
@@ -36,11 +46,19 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
     fun handleSwipe(movie: MovieDto, isLiked: Boolean) {
         if (isLiked) {
             viewModelScope.launch {
-                repository.insertMovieToFavorites(movie)
+                repository.insertMovieToFavorites(movieDto = movie)
             }
         }
+
+        // 1. Quitamos la carta que acabamos de deslizar (la primera)
         if (movies.isNotEmpty()) {
             movies = movies.drop(1)
+        }
+
+        // 2. EL MOTOR INFINITO: Si nos quedan 3 cartas o menos en la mano...
+        if (movies.size <= 3) {
+            currentPage++ // Pasamos a la siguiente página (2, luego 3, luego 4...)
+            loadMovies()  // Llamamos a internet en segundo plano
         }
     }
     fun vaciarFavoritos() {
