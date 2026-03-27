@@ -21,15 +21,14 @@ class MovieRepository(private val database: AppDatabase) {
     }
     suspend fun getMovieProviders(movieId: Int): List<ProviderInfo> {
         return try {
-            // Llamamos a la API pasándole el ID de la película y nuestra clave
-            val response = api.getMovieProviders(
-                movieId = movieId,
-                apiKey = RetrofitClient.API_KEY
-            )
+            val response = api.getMovieProviders(movieId, RetrofitClient.API_KEY)
+            val plataformas = response.results["ES"]?.flatrate ?: emptyList()
 
-            // Buscamos "ES" (España) y sacamos la lista "flatrate" (suscripción mensual)
-            // Si no está en ninguna plataforma, devolvemos una lista vacía
-            response.results["ES"]?.flatrate ?: emptyList()
+            // 🛡️ EL FILTRO: Quitamos las plataformas que contengan "Ads" o "anuncios"
+            plataformas.filter { proveedor ->
+                !proveedor.providerName.contains("Ads", ignoreCase = true) &&
+                        !proveedor.providerName.contains("anuncios", ignoreCase = true)
+            }
 
         } catch (e: Exception) {
             emptyList()

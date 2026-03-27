@@ -7,6 +7,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,9 +20,12 @@ import coil.compose.AsyncImage
 import com.mario.plotswipe.data.remote.MovieDto
 
 @Composable
-fun MovieCard(movie: MovieDto, modifier: Modifier = Modifier) {
-    // TMDB nos da solo el final de la ruta del póster, nosotros le ponemos el "https" delante
+fun MovieCard(movie: MovieDto, viewModel: MovieViewModel, modifier: Modifier = Modifier) {    // TMDB nos da solo el final de la ruta del póster, nosotros le ponemos el "https" delante
     val imageUrl = "https://image.tmdb.org/t/p/w500${movie.posterPath}"
+    // Le pedimos a internet las plataformas de esta tarjeta
+    LaunchedEffect(movie.id) {
+        viewModel.getProvidersForCard(movie.id)
+    }
 
     // Card es la "tarjeta" física con bordes redondeados y un poco de sombra
     Card(
@@ -41,6 +45,16 @@ fun MovieCard(movie: MovieDto, modifier: Modifier = Modifier) {
                 contentScale = ContentScale.Crop, // Recorta la imagen para que llene la tarjeta
                 modifier = Modifier.fillMaxSize()
             )
+
+            // Capa de Logos: Flotando en la esquina superior derecha
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd) // Arriba a la derecha
+                    .padding(12.dp)
+            ) {
+                // Leemos los logos desde la memoria caché del ViewModel
+                LogosFlotantes(logos = viewModel.providersCache[movie.id] ?: emptyList())
+            }
 
             // Capa 2: Un fondo semitransparente abajo para que el texto se lea bien
             Box(

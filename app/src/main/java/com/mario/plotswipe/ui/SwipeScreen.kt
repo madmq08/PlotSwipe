@@ -74,8 +74,7 @@ fun SwipeScreen(viewModel: MovieViewModel) {
                         )
                     }
             ) {
-                MovieCard(movie = peliculaActual)
-            }
+                MovieCard(movie = peliculaActual, viewModel = viewModel)            }
         }
     }
 }

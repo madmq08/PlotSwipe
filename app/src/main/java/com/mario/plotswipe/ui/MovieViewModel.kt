@@ -2,6 +2,7 @@ package com.mario.plotswipe.ui
 
 import android.app.Application
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
@@ -11,6 +12,7 @@ import com.mario.plotswipe.data.remote.MovieDto
 import com.mario.plotswipe.data.remote.ProviderInfo
 import com.mario.plotswipe.data.repository.MovieRepository
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 
 class MovieViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -25,6 +27,8 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
     var movieProviders by mutableStateOf<List<ProviderInfo>>(emptyList())
         private set
 
+    val providersCache = mutableStateMapOf<Int, List<ProviderInfo>>()
+
     val peliculasFavoritas = repository.getAllSavedMovies()
 
     init {
@@ -34,22 +38,33 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
     private fun loadMovies() {
         viewModelScope.launch {
             try {
+                // 1. Pedimos las pelis nuevas a internet (la página actual)
                 val nuevasPeliculas = repository.fetchPopularMovies(page = currentPage)
 
-                // 🛡️ FILTRO: Solo dejamos pasar a las películas que NO estén ya en nuestra mano
-                val peliculasSinRepetir = nuevasPeliculas.filter { nueva ->
-                    movies.none { existente -> existente.id == nueva.id }
+                // 2. 🕵️‍♂️ Hacemos una lectura rápida de tu base de datos local (Room)
+                // Usamos .first() para leer la lista actual que tienes guardada en Favoritos
+                val pelisGuardadas = repository.getAllSavedMovies().first()
+
+                // 3. 🛡️ EL SÚPER FILTRO: Comprobamos la mano y la base de datos
+                val peliculasFiltradas = nuevasPeliculas.filter { nueva ->
+                    // Prueba A: Que no esté ya en las cartas que tenemos listas para deslizar
+                    val noEstaEnMano = movies.none { existente -> existente.id == nueva.id }
+
+                    // Prueba B: Que no esté en nuestra lista de favoritos guardados
+                    val noEstaEnDB = pelisGuardadas.none { guardada -> guardada.id == nueva.id }
+
+                    // La peli solo se añade si pasa AMBAS pruebas (true && true)
+                    noEstaEnMano && noEstaEnDB
                 }
 
-                // Añadimos solo las que han pasado el filtro
-                movies = movies + peliculasSinRepetir
+                // 4. Añadimos al mazo solo las que han sobrevivido al filtro
+                movies = movies + peliculasFiltradas
 
             } catch (e: Exception) {
-                // ...
+                // Si falla internet, de momento lo dejamos pasar
             }
         }
     }
-
     // La nueva función mágica que decide qué hacer al deslizar
     fun handleSwipe(movie: MovieDto, isLiked: Boolean) {
         if (isLiked) {
@@ -83,6 +98,14 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
         // y hay que hacerla en un "hilo secundario" (en la sombra)
         viewModelScope.launch {
             repository.deleteAllMovies()
+        }
+    }
+    fun getProvidersForCard(movieId: Int) {
+        if (!providersCache.containsKey(movieId)) {
+            viewModelScope.launch {
+                val logos = repository.getMovieProviders(movieId)
+                providersCache[movieId] = logos // Lo guardamos en el diccionario
+            }
         }
     }
 }
