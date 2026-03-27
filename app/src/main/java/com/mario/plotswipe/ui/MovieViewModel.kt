@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.mario.plotswipe.data.local.AppDatabase
 import com.mario.plotswipe.data.remote.MovieDto
+import com.mario.plotswipe.data.remote.ProviderInfo
 import com.mario.plotswipe.data.repository.MovieRepository
 import kotlinx.coroutines.launch
 
@@ -21,6 +22,9 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
     var movies by mutableStateOf<List<MovieDto>>(emptyList())
         private set
 
+    var movieProviders by mutableStateOf<List<ProviderInfo>>(emptyList())
+        private set
+
     val peliculasFavoritas = repository.getAllSavedMovies()
 
     init {
@@ -30,14 +34,18 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
     private fun loadMovies() {
         viewModelScope.launch {
             try {
-                // Le pasamos la página actual al repositorio
                 val nuevasPeliculas = repository.fetchPopularMovies(page = currentPage)
 
-                // En vez de sustituir la lista, AÑADIMOS las nuevas al final de las que ya teníamos
-                movies = movies + nuevasPeliculas
+                // 🛡️ FILTRO: Solo dejamos pasar a las películas que NO estén ya en nuestra mano
+                val peliculasSinRepetir = nuevasPeliculas.filter { nueva ->
+                    movies.none { existente -> existente.id == nueva.id }
+                }
+
+                // Añadimos solo las que han pasado el filtro
+                movies = movies + peliculasSinRepetir
 
             } catch (e: Exception) {
-                // Manejo de errores...
+                // ...
             }
         }
     }
@@ -59,6 +67,15 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
         if (movies.size <= 3) {
             currentPage++ // Pasamos a la siguiente página (2, luego 3, luego 4...)
             loadMovies()  // Llamamos a internet en segundo plano
+        }
+    }
+    // Llamaremos a esta función cuando el usuario pulse en una película para ver sus detalles
+    fun loadProvidersForMovie(movieId: Int) {
+        viewModelScope.launch {
+            // Vaciamos la lista anterior para que no salgan logos de la peli anterior mientras carga
+            movieProviders = emptyList()
+            // Pedimos los logos nuevos al repositorio
+            movieProviders = repository.getMovieProviders(movieId)
         }
     }
     fun vaciarFavoritos() {
