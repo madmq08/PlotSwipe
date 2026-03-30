@@ -1,6 +1,8 @@
 package com.mario.plotswipe.ui
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -8,6 +10,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.mario.plotswipe.data.remote.MovieDto
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 @Composable
 fun MovieCard(movie: MovieDto, viewModel: MovieViewModel, modifier: Modifier = Modifier) {    // TMDB nos da solo el final de la ruta del póster, nosotros le ponemos el "https" delante
@@ -26,6 +32,9 @@ fun MovieCard(movie: MovieDto, viewModel: MovieViewModel, modifier: Modifier = M
     LaunchedEffect(movie.id) {
         viewModel.getProvidersForCard(movie.id)
     }
+
+    // 🧠 Memoria de la tarjeta: ¿Está la sinopsis expandida? (Por defecto no)
+    var expanded by remember { mutableStateOf(false) }
 
     // Card es la "tarjeta" física con bordes redondeados y un poco de sombra
     Card(
@@ -75,12 +84,17 @@ fun MovieCard(movie: MovieDto, viewModel: MovieViewModel, modifier: Modifier = M
                     Spacer(modifier = Modifier.height(8.dp))
 
                     // Sinopsis (limitada a 3 líneas para que no ocupe toda la pantalla)
+                    // Sinopsis interactiva
                     Text(
                         text = movie.overview,
                         color = Color.LightGray,
                         fontSize = 14.sp,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis // Pone "..." si el texto es muy largo
+                        // 🪄 Si está expandido mostramos líneas infinitas, si no, solo 3
+                        maxLines = if (expanded) Int.MAX_VALUE else 3,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .clickable { expanded = !expanded } // 👆 Si tocas, cambia al estado contrario
+                            .animateContentSize() // ✨ Animación súper fluida y profesional al crecer
                     )
                 }
             }

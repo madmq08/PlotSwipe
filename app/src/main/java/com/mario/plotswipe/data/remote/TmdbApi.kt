@@ -9,6 +9,7 @@ interface TmdbApi {
     suspend fun getPopularMovies(
         @Query("api_key") apiKey: String,
         @Query("language") language: String = "es-ES",
+        @Query("region") region: String = "ES",
         @Query("page") page: Int = 1 // 👈 ¡AÑADIMOS ESTO!
     ): MovieResponse
     @GET("movie/{movie_id}/watch/providers")

@@ -1,5 +1,6 @@
 package com.mario.plotswipe.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -17,10 +18,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.filled.Done
 
 @Composable
 // Añadimos un "onMovieClick" para avisar a la brújula de que queremos viajar
@@ -66,16 +69,38 @@ fun FavoritesScreen(viewModel: MovieViewModel, onMovieClick: (Int) -> Unit) {
                 modifier = Modifier.weight(1f)
             ) {
                 items(favoriteMovies) { movie ->
-                    AsyncImage(
-                        model = "https://image.tmdb.org/t/p/w500${movie.posterPath}",
-                        contentDescription = movie.title,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(2f / 3f)
-                            // MAGIA 2: Hacemos que la imagen se pueda tocar y pasamos su ID
-                            .clickable { onMovieClick(movie.id) }
-                    )
+                    // Metemos la imagen en un Box para poder superponer el botón
+                    Box(modifier = Modifier.fillMaxWidth()) {
+
+                        // Capa 1: El póster de la película
+                        AsyncImage(
+                            model = "https://image.tmdb.org/t/p/w500${movie.posterPath}",
+                            contentDescription = movie.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(2f / 3f)
+                                .clickable { onMovieClick(movie.id) }
+                        )
+
+                        // Capa 2: El botón de "Marcar como Vista" MEJORADO
+                        IconButton(
+                            onClick = { viewModel.marcarComoVista(movie.id) },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(8.dp)
+                                // Fondo negro casi opaco y un poco más grande
+                                .background(Color.Black.copy(alpha = 0.8f), shape = androidx.compose.foundation.shape.CircleShape)
+                                .size(42.dp)
+                        ) {
+                            Icon(
+                                // Usamos un icono mucho más grueso y sólido
+                                imageVector = androidx.compose.material.icons.Icons.Filled.CheckCircle,
+                                contentDescription = "Marcar como vista",
+                                tint = Color.White
+                            )
+                        }
+                    }
                 }
             }
         }

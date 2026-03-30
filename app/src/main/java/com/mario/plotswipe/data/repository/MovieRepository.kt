@@ -50,4 +50,15 @@ class MovieRepository(private val database: AppDatabase) {
     fun getAllSavedMovies() = database.movieDao().getAllSavedMovies()
     suspend fun deleteAllMovies() = database.movieDao().deleteAllMovies()
 
+    // Trae SOLO las que están pendientes de ver (isWatched = 0)
+    fun getFavoriteMovies() = database.movieDao().getFavoriteMovies()
+
+    // Trae SOLO las que ya has visto (isWatched = 1)
+    fun getWatchedMovies() = database.movieDao().getWatchedMovies()
+
+    // El comando para cambiarla de lista
+    suspend fun markAsWatched(movieId: Int) {
+        database.movieDao().markAsWatched(movieId)
+    }
+
 }

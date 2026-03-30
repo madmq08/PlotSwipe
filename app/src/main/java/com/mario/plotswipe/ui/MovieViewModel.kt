@@ -8,11 +8,15 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.mario.plotswipe.data.local.AppDatabase
+import com.mario.plotswipe.data.local.MovieEntity
 import com.mario.plotswipe.data.remote.MovieDto
 import com.mario.plotswipe.data.remote.ProviderInfo
 import com.mario.plotswipe.data.repository.MovieRepository
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 
 class MovieViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -29,7 +33,11 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
 
     val providersCache = mutableStateMapOf<Int, List<ProviderInfo>>()
 
-    val peliculasFavoritas = repository.getAllSavedMovies()
+    val peliculasFavoritas: StateFlow<List<MovieEntity>> = repository.getFavoriteMovies()
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    val peliculasVistas: StateFlow<List<MovieEntity>> = repository.getWatchedMovies()
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     init {
         loadMovies()
@@ -38,30 +46,38 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
     private fun loadMovies() {
         viewModelScope.launch {
             try {
-                // 1. Pedimos las pelis nuevas a internet (la página actual)
+                // 1. Pedimos las pelis
                 val nuevasPeliculas = repository.fetchPopularMovies(page = currentPage)
-
-                // 2. 🕵️‍♂️ Hacemos una lectura rápida de tu base de datos local (Room)
-                // Usamos .first() para leer la lista actual que tienes guardada en Favoritos
                 val pelisGuardadas = repository.getAllSavedMovies().first()
 
-                // 3. 🛡️ EL SÚPER FILTRO: Comprobamos la mano y la base de datos
+                // 2. Filtramos
                 val peliculasFiltradas = nuevasPeliculas.filter { nueva ->
-                    // Prueba A: Que no esté ya en las cartas que tenemos listas para deslizar
                     val noEstaEnMano = movies.none { existente -> existente.id == nueva.id }
-
-                    // Prueba B: Que no esté en nuestra lista de favoritos guardados
                     val noEstaEnDB = pelisGuardadas.none { guardada -> guardada.id == nueva.id }
 
-                    // La peli solo se añade si pasa AMBAS pruebas (true && true)
-                    noEstaEnMano && noEstaEnDB
+                    // 🌟 EL FILTRO MÁGICO: Si la sinopsis está vacía, a la basura
+                    val tieneSinopsis = nueva.overview != null && nueva.overview.isNotBlank()
+
+                    // 🖼️ EL FILTRO VISUAL: Si no tiene póster, no la queremos
+                    val tienePoster = nueva.posterPath != null && nueva.posterPath.isNotBlank()
+
+                    // La peli solo entra si cumple las CUATRO cosas
+                    noEstaEnMano && noEstaEnDB && tieneSinopsis && tienePoster
                 }
 
-                // 4. Añadimos al mazo solo las que han sobrevivido al filtro
+                // 3. Añadimos las cartas válidas a la mano
                 movies = movies + peliculasFiltradas
 
+                // 🚀 4. NUEVO: EL MOTOR TURBO
+                // Si después de filtrar nos quedan 3 cartas o menos, pedimos la siguiente página
+                // (El 'isNotEmpty' evita que entremos en bucle si TMDB no tiene más películas en el mundo)
+                if (movies.size <= 3 && nuevasPeliculas.isNotEmpty()) {
+                    currentPage++
+                    loadMovies() // 🔁 La función se llama a sí misma para seguir buscando
+                }
+
             } catch (e: Exception) {
-                // Si falla internet, de momento lo dejamos pasar
+                // Manejo de errores
             }
         }
     }
@@ -106,6 +122,11 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
                 val logos = repository.getMovieProviders(movieId)
                 providersCache[movieId] = logos // Lo guardamos en el diccionario
             }
+        }
+    }
+    fun marcarComoVista(movieId: Int) {
+        viewModelScope.launch {
+            repository.markAsWatched(movieId)
         }
     }
 }

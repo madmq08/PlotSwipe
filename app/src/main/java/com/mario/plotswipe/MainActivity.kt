@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
@@ -35,11 +36,10 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
                         NavigationBar {
-                            // Averiguamos en qué pantalla estamos para pintar el botón de un color u otro
                             val navBackStackEntry by navController.currentBackStackEntryAsState()
                             val currentRoute = navBackStackEntry?.destination?.route
 
-                            // Botón 1: Inicio (Swipe)
+                            // Botón 1: Inicio
                             NavigationBarItem(
                                 icon = { Icon(Icons.Filled.Home, contentDescription = "Inicio") },
                                 label = { Text("Inicio") },
@@ -53,10 +53,18 @@ class MainActivity : ComponentActivity() {
                                 selected = currentRoute == "favorites",
                                 onClick = { navController.navigate("favorites") { launchSingleTop = true } }
                             )
+                            // 🌟 NUEVO Botón 3: Vistas
+                            NavigationBarItem(
+                                // Usamos el icono del Tick para representar las ya vistas
+                                icon = { Icon(androidx.compose.material.icons.Icons.Filled.CheckCircle, contentDescription = "Vistas") },
+                                label = { Text("Vistas") },
+                                selected = currentRoute == "watched",
+                                onClick = { navController.navigate("watched") { launchSingleTop = true } }
+                            )
                         }
                     }
                 ) { paddingValues ->
-                    // 3. El Gestor de Rutas: Muestra una pantalla u otra según el botón pulsado
+                    // 3. El Gestor de Rutas
                     NavHost(
                         navController = navController,
                         startDestination = "swipe",
@@ -69,21 +77,27 @@ class MainActivity : ComponentActivity() {
                             FavoritesScreen(
                                 viewModel = viewModel,
                                 onMovieClick = { movieId ->
-                                    // Cuando tocamos una peli, viajamos a la ruta de detalle con su ID
                                     navController.navigate("detail/$movieId")
                                 }
                             )
                         }
-                        // 🌟 NUEVA RUTA: La pantalla de detalle
+                        // 🌟 NUEVA RUTA: La pantalla de Vistas
+                        composable("watched") {
+                            com.mario.plotswipe.ui.WatchedScreen(
+                                viewModel = viewModel,
+                                onMovieClick = { movieId ->
+                                    navController.navigate("detail/$movieId")
+                                }
+                            )
+                        }
                         composable("detail/{movieId}") { backStackEntry ->
-                            // Rescatamos el ID de la URL a la que hemos viajado
                             val movieIdString = backStackEntry.arguments?.getString("movieId")
                             val movieId = movieIdString?.toIntOrNull() ?: 0
 
                             DetailScreen(
                                 viewModel = viewModel,
                                 movieId = movieId,
-                                onBackClick = { navController.popBackStack() } // Para volver atrás
+                                onBackClick = { navController.popBackStack() }
                             )
                         }
                     }

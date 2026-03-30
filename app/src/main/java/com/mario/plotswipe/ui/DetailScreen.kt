@@ -18,10 +18,12 @@ import coil.compose.AsyncImage
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import com.mario.plotswipe.data.remote.ProviderInfo
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -138,8 +140,32 @@ fun PlataformasStreaming(viewModel: MovieViewModel, movieId: Int) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+        // 👇 NUEVO: EL BOTÓN GIGANTE DE MARCAR COMO VISTA 👇
+        Spacer(modifier = Modifier.height(24.dp)) // Espacio para que respire el diseño
+
+        androidx.compose.material3.Button(
+            onClick = {
+                viewModel.marcarComoVista(movieId)
+                // Al pulsarlo le manda el ID de esta peli a la base de datos
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF4CAF50) // Color verde estilo "Completado"
+            )
+        ) {
+            Icon(
+                imageVector = androidx.compose.material.icons.Icons.Filled.CheckCircle,
+                contentDescription = "Vista",
+                tint = Color.White
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = "Marcar como Vista", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        }
     }
 }
+
 @Composable
 fun LogosFlotantes(logos: List<ProviderInfo>) {
     if (logos.isNotEmpty()) {
