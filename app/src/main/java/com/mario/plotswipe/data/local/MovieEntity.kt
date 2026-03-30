@@ -11,5 +11,5 @@ data class MovieEntity(
     val posterPath: String?,
     val isLiked: Boolean = false,
     val overview: String,
-    val isWatched: Boolean = false
+    val isWatched: Int = 0
 )

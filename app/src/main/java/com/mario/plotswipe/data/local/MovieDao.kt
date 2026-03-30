@@ -28,4 +28,10 @@ interface MovieDao {
     // 4. 🪄 NUEVO: El comando mágico para cambiarla de lista
     @Query("UPDATE movies SET isWatched = 1 WHERE id = :movieId")
     suspend fun markAsWatched(movieId: Int)
+
+    @Query("DELETE FROM movies WHERE isWatched = 1")
+    suspend fun deleteWatchedMovies()
+
+    @Query("UPDATE movies SET isWatched = 2 WHERE id = :movieId")
+    suspend fun markAsDiscarded(movieId: Int)
 }

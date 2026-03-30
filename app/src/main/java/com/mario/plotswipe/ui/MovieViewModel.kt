@@ -84,20 +84,25 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
     // La nueva función mágica que decide qué hacer al deslizar
     fun handleSwipe(movie: MovieDto, isLiked: Boolean) {
         if (isLiked) {
+            // Caso Derecha (Like): Guardamos como favorita (isWatched = 0)
             viewModelScope.launch {
-                repository.insertMovieToFavorites(movieDto = movie)
+                repository.insertMovieToFavorites(movie)
             }
+        } else {
+            // 👇 NUEVO: Caso Izquierda (Dislike) 👇
+            // Guardamos como descartada (isWatched = 2) para que no vuelva a salir
+            descartarPelicula(movie)
         }
 
-        // 1. Quitamos la carta que acabamos de deslizar (la primera)
+        // 1. Quitamos la carta de la pantalla
         if (movies.isNotEmpty()) {
             movies = movies.drop(1)
         }
 
-        // 2. EL MOTOR INFINITO: Si nos quedan 3 cartas o menos en la mano...
+        // 2. EL MOTOR INFINITO: Si nos quedan 3 cartas o menos, pedimos más a internet
         if (movies.size <= 3) {
-            currentPage++ // Pasamos a la siguiente página (2, luego 3, luego 4...)
-            loadMovies()  // Llamamos a internet en segundo plano
+            currentPage++
+            loadMovies()
         }
     }
     // Llamaremos a esta función cuando el usuario pulse en una película para ver sus detalles
@@ -127,6 +132,27 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
     fun marcarComoVista(movieId: Int) {
         viewModelScope.launch {
             repository.markAsWatched(movieId)
+        }
+    }
+
+    fun vaciarVistas() {
+        viewModelScope.launch {
+            repository.deleteWatchedMovies()
+        }
+    }
+
+    fun descartarPelicula(movieDto: MovieDto) {
+        viewModelScope.launch {
+            // La guardamos en la DB con el estado 2 (Descartada)
+            val entity = MovieEntity(
+                id = movieDto.id,
+                title = movieDto.title,
+                posterPath = movieDto.posterPath ?: "",
+                overview = movieDto.overview,
+                isWatched = 2 // 2 significa "No me la vuelvas a enseñar"
+            )
+            repository.insertMovieToFavorites(movieDto) // Primero la insertamos
+            repository.markAsDiscarded(movieDto.id)     // Luego la marcamos como descartada
         }
     }
 }

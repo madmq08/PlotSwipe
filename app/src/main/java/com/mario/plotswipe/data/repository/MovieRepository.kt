@@ -61,4 +61,12 @@ class MovieRepository(private val database: AppDatabase) {
         database.movieDao().markAsWatched(movieId)
     }
 
+    suspend fun deleteWatchedMovies() {
+        database.movieDao().deleteWatchedMovies()
+    }
+
+    suspend fun markAsDiscarded(movieId: Int) {
+        database.movieDao().markAsDiscarded(movieId)
+    }
+
 }
