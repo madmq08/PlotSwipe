@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "856060909037",
+    "project_id": "plotswipe-41ed8",
+    "storage_bucket": "plotswipe-41ed8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:856060909037:android:d591a277e605abb0ef83e4",
+        "android_client_info": {
+          "package_name": "com.mario.plotswipe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQI75jcuxyj-6PPSfBbgNfltBIqbBhpdg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
