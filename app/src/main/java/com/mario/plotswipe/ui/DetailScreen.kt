@@ -25,10 +25,17 @@ import com.mario.plotswipe.data.remote.ProviderInfo
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(viewModel: MovieViewModel, movieId: Int, onBackClick: () -> Unit) {
-    // Buscamos la película exacta en nuestra lista de favoritas usando el ID
+    // 🧠 AHORA LEEMOS LAS DOS CAJAS
     val favoriteMovies by viewModel.peliculasFavoritas.collectAsState(initial = emptyList())
-    val movie = favoriteMovies.find { it.id == movieId }
+    val watchedMovies by viewModel.peliculasVistas.collectAsState(initial = emptyList())
 
+    // Buscamos primero en favoritas, y si no está (devuelve null), buscamos en vistas
+    val movie = favoriteMovies.find { it.id == movieId } ?: watchedMovies.find { it.id == movieId }
+
+    // 🧠 Comprobamos si la película ya está marcada como vista (isWatched == 1)
+    val yaEstaVista = movie?.isWatched == 1
+
+    // ... (El resto de tus estados showDialog siguen igual aquí) ...
     // 🧠 ESTADOS PARA EL DIÁLOGO DE CONFIRMACIÓN
     var showDialog by remember { mutableStateOf(false) }
 
@@ -109,7 +116,8 @@ fun DetailScreen(viewModel: MovieViewModel, movieId: Int, onBackClick: () -> Uni
                     PlataformasStreaming(
                         viewModel = viewModel,
                         movieId = movieId,
-                        onOpenConfirm = { showDialog = true } // 👈 Pasamos el aviso de abrir diálogo
+                        yaEstaVista = yaEstaVista,
+                        onOpenConfirm = { showDialog = true }
                     )
                 }
             }
@@ -118,7 +126,7 @@ fun DetailScreen(viewModel: MovieViewModel, movieId: Int, onBackClick: () -> Uni
 }
 
 @Composable
-fun PlataformasStreaming(viewModel: MovieViewModel, movieId: Int, onOpenConfirm: () -> Unit) {
+fun PlataformasStreaming(viewModel: MovieViewModel, movieId: Int, yaEstaVista: Boolean, onOpenConfirm: () -> Unit) {
     LaunchedEffect(key1 = movieId) {
         viewModel.loadProvidersForMovie(movieId)
     }
@@ -155,26 +163,27 @@ fun PlataformasStreaming(viewModel: MovieViewModel, movieId: Int, onOpenConfirm:
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+// MAGIA: Solo mostramos el botón si NO está vista
+        if (!yaEstaVista) {
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Botón modificado para que llame al diálogo en lugar de marcar directamente
-        Button(
-            onClick = onOpenConfirm, // 👈 Ahora avisa arriba para que salga el AlertDialog
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF4CAF50)
-            )
-        ) {
-            Icon(
-                imageVector = Icons.Filled.CheckCircle,
-                contentDescription = "Vista",
-                tint = Color.White
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "Marcar como Vista", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            androidx.compose.material3.Button(
+                onClick = onOpenConfirm, // <-- AHORA ABRE EL AVISO
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4CAF50)
+                )
+            ) {
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Filled.CheckCircle,
+                    contentDescription = "Vista",
+                    tint = Color.White
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Marcar como Vista", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            }
         }
     }
 }
