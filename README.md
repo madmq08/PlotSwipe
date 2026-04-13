@@ -3,11 +3,23 @@ PlotSwipe 🎬 | App móvil (PFC DAM) para descubrir películas con interfaz de 
 
 # Tencologías utilizadas
 
-- Kotlin + Jetpack Compose
-- Retrofit 2 (API REST)
-- Room Database (Persistencia local)
-- Firebase Auth (Autenticación de usuarios)
-- MVVM Architecture
+- Lenguaje: Kotlin.
+
+- UI Toolkit: Jetpack Compose (Material Design 3).
+
+- Arquitectura: MVVM (Model-View-ViewModel) recomendada por Google.
+
+- Navegación: Jetpack Navigation Compose (Single Activity Architecture).
+
+- Base de Datos Local: Room (SQLite) para la persistencia de películas guardadas y vistas.
+
+- Backend y Autenticación: Firebase Authentication (Email y Contraseña).
+
+- Consumo de API REST: Retrofit 2 + GSON (para conexión con The Movie Database - TMDB).
+
+- Carga de Imágenes Asíncrona: Coil (para renderizar pósters y logos de plataformas).
+
+- Programación Reactiva y Asíncrona: Kotlin Coroutines & StateFlow.
 
 # Árbol de directorios 😉
 
