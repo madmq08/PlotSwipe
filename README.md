@@ -31,6 +31,16 @@ PlotSwipe 🎬 | App móvil (PFC DAM) para descubrir películas con interfaz de 
 - Pruebas de Consumo de API: Se verificó la descarga dinámica de páginas de películas desde TMDB, incluyendo el manejo de errores si una película no tiene póster, y la obtención en tiempo real de plataformas de streaming disponibles en España.
 
 - Pruebas de Navegación y Usabilidad (UX): Se comprobó el flujo seguro de pantallas (Login -> Home), el funcionamiento del BottomNavigationBar y la implementación de AlertDialogs (cuadros de confirmación) para evitar acciones accidentales por parte del usuario.
+
+# Limitaciones detectadas
+
+1 - Aislamiento de la Base de Datos Local: Actualmente, Room guarda las películas en el dispositivo sin asociarlas a un ID de usuario específico. Próximo paso a implementar: Añadir el userId de Firebase a la tabla de Room para que las listas de películas sean únicas para cada usuario en un mismo teléfono.
+
+2 - Dependencia de Red para Multimedia: Aunque la lista de películas se guarda localmente, la app depende de una conexión a internet para descargar las imágenes (pósters) usando Coil y para consultar las plataformas de streaming actualizadas.
+
+3 - Paginación del "Swipe": El motor actual recarga un bloque de 20 películas cuando quedan 3 cartas. Para una aplicación a escala global, sería más eficiente implementar la librería Paging 3 de Google para gestionar la memoria de forma más óptima.
+
+4 - Recuperación de Contraseña: En el sistema de autenticación de Firebase actual, aún no se ha diseñado el flujo de UI para "He olvidado mi contraseña" (envío de email de recuperación).
   
 # Árbol de directorios 😉
 
