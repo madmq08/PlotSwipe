@@ -21,6 +21,17 @@ PlotSwipe 🎬 | App móvil (PFC DAM) para descubrir películas con interfaz de 
 
 - Programación Reactiva y Asíncrona: Kotlin Coroutines & StateFlow.
 
+
+# Pruebas realizadas
+
+- Pruebas de Autenticación (Firebase): Se ha comprobado el correcto registro de nuevos usuarios, el inicio de sesión exitoso y el bloqueo de acceso cuando las credenciales son incorrectas o los campos están vacíos.
+
+- Pruebas de Persistencia Local (Room): Se validó la correcta inserción de películas, la actualización de estados (movimiento de Favoritas a Vistas) y el borrado de registros. Se implementó un estado de "Descartada" para evitar que el algoritmo muestre películas rechazadas al reiniciar la app.
+
+- Pruebas de Consumo de API: Se verificó la descarga dinámica de páginas de películas desde TMDB, incluyendo el manejo de errores si una película no tiene póster, y la obtención en tiempo real de plataformas de streaming disponibles en España.
+
+- Pruebas de Navegación y Usabilidad (UX): Se comprobó el flujo seguro de pantallas (Login -> Home), el funcionamiento del BottomNavigationBar y la implementación de AlertDialogs (cuadros de confirmación) para evitar acciones accidentales por parte del usuario.
+  
 # Árbol de directorios 😉
 
 ```text
