@@ -3,6 +3,7 @@ PlotSwipe 🎬 | App móvil (PFC DAM) para descubrir películas con interfaz de 
 
 # Árbol de directorios 😉
 
+```text
 com.mario.plotswipe
 │
 ├── MainActivity.kt          # Punto de entrada y Gestor de Rutas (NavHost + BottomBar)
@@ -17,7 +18,7 @@ com.mario.plotswipe
 │   └── DetailScreen.kt      # Información extendida y plataformas de streaming
 │
 └── data/                    # CAPA DE DATOS (Arquitectura de Repositorio)
-    ├── MovieRepository.kt   # Gestor de datos (decide si usar Room o la API)
+    ├── MovieRepository.kt   # Gestor de datos (SSOT - Single Source of Truth)
     │
     ├── local/               # PERSISTENCIA LOCAL (Room Database)
     │   ├── MovieDatabase.kt # Definición de la base de datos SQLite
