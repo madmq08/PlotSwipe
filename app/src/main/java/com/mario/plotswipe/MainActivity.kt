@@ -7,68 +7,87 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
-import androidx.compose.runtime.collectAsState // 👈 Importante para leer estados de Firebase
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf // 👈 NUEVO
+import androidx.compose.runtime.remember // 👈 NUEVO
+import androidx.compose.runtime.setValue // 👈 NUEVO
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.mario.plotswipe.ui.AuthViewModel // 👈 Importamos el cerebro del login
+import com.google.firebase.auth.FirebaseAuth
+import com.mario.plotswipe.ui.AuthViewModel
 import com.mario.plotswipe.ui.DetailScreen
 import com.mario.plotswipe.ui.FavoritesScreen
-import com.mario.plotswipe.ui.LoginScreen // 👈 Importamos la pantalla de login
+import com.mario.plotswipe.ui.LoginScreen
 import com.mario.plotswipe.ui.MovieViewModel
 import com.mario.plotswipe.ui.SwipeScreen
 
+@OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-                // 🧠 1. Instanciamos el nuevo cerebro de usuarios
                 val authViewModel: AuthViewModel = viewModel()
-
-                // 🧠 2. Le preguntamos a Firebase: "¿Hay alguien conectado?"
                 val isUserLoggedIn by authViewModel.isUserLoggedIn.collectAsState()
 
-                // 🚪 EL PORTERO DE LA DISCOTECA
                 if (!isUserLoggedIn) {
-                    // Si NO está logueado, mostramos SOLAMENTE la pantalla de Login
                     LoginScreen(authViewModel = authViewModel)
                 } else {
-                    // Si SÍ está logueado, cargamos tu app tal y como la tenías
-                    // 1. Instanciamos la Brújula y el Cerebro (ViewModel) de las pelis
                     val navController = rememberNavController()
-                    val viewModel: MovieViewModel = viewModel()
+                    val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid
+                    val viewModel: MovieViewModel = viewModel(key = currentUserUid)
 
-                    // 2. Scaffold nos crea una pantalla con espacio para un menú inferior
+                    // 👇 VARIABLE PARA CONTROLAR SI SE MUESTRA EL MENSAJE DE AVISO 👇
+                    var showLogoutDialog by remember { mutableStateOf(false) }
+
                     Scaffold(
                         modifier = Modifier.fillMaxSize(),
+                        topBar = {
+                            val navBackStackEntry by navController.currentBackStackEntryAsState()
+                            val currentRoute = navBackStackEntry?.destination?.route
+
+                            if (currentRoute != null && !currentRoute.startsWith("detail")) {
+                                TopAppBar(
+                                    title = { Text("PlotSwipe 🍿") },
+                                    actions = {
+                                        // 👇 AHORA EL BOTÓN SOLO ABRE EL DIÁLOGO 👇
+                                        IconButton(onClick = { showLogoutDialog = true }) {
+                                            Icon(
+                                                imageVector = Icons.Filled.ExitToApp,
+                                                contentDescription = "Cerrar Sesión",
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        },
                         bottomBar = {
                             NavigationBar {
                                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                                 val currentRoute = navBackStackEntry?.destination?.route
 
-                                // Botón 1: Inicio
                                 NavigationBarItem(
                                     icon = { Icon(Icons.Filled.Home, contentDescription = "Inicio") },
                                     label = { Text("Inicio") },
                                     selected = currentRoute == "swipe",
                                     onClick = { navController.navigate("swipe") { launchSingleTop = true } }
                                 )
-                                // Botón 2: Favoritos
                                 NavigationBarItem(
                                     icon = { Icon(Icons.Filled.Favorite, contentDescription = "Favoritos") },
                                     label = { Text("Favoritos") },
                                     selected = currentRoute == "favorites",
                                     onClick = { navController.navigate("favorites") { launchSingleTop = true } }
                                 )
-                                // Botón 3: Vistas
                                 NavigationBarItem(
                                     icon = { Icon(Icons.Filled.CheckCircle, contentDescription = "Vistas") },
                                     label = { Text("Vistas") },
@@ -78,7 +97,6 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     ) { paddingValues ->
-                        // 3. El Gestor de Rutas
                         NavHost(
                             navController = navController,
                             startDestination = "swipe",
@@ -113,6 +131,32 @@ class MainActivity : ComponentActivity() {
                                     onBackClick = { navController.popBackStack() }
                                 )
                             }
+                        }
+
+                        // 👇 EL CUADRO DE DIÁLOGO DE CONFIRMACIÓN 👇
+                        if (showLogoutDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showLogoutDialog = false },
+                                title = { Text("Cerrar Sesión") },
+                                text = { Text("¿Estás seguro de que quieres salir de tu cuenta?") },
+                                confirmButton = {
+                                    TextButton(
+                                        onClick = {
+                                            showLogoutDialog = false // Escondemos el mensaje
+                                            authViewModel.logout()   // 🚪 ¡Cerramos sesión!
+                                        }
+                                    ) {
+                                        Text("Salir", color = MaterialTheme.colorScheme.error)
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(
+                                        onClick = { showLogoutDialog = false } // Solo escondemos
+                                    ) {
+                                        Text("Cancelar")
+                                    }
+                                }
+                            )
                         }
                     }
                 }

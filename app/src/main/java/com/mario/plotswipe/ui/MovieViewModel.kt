@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth // 👈 NUEVO: Importamos Firebase Auth
 import com.mario.plotswipe.data.local.AppDatabase
 import com.mario.plotswipe.data.local.MovieEntity
 import com.mario.plotswipe.data.remote.MovieDto
@@ -25,6 +26,10 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = MovieRepository(database)
     private var currentPage = 1
 
+    // 🧠 NUEVO: Conseguimos el "DNI" del usuario actual desde Firebase
+    private val userId: String
+        get() = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
     var movies by mutableStateOf<List<MovieDto>>(emptyList())
         private set
 
@@ -33,10 +38,11 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
 
     val providersCache = mutableStateMapOf<Int, List<ProviderInfo>>()
 
-    val peliculasFavoritas: StateFlow<List<MovieEntity>> = repository.getFavoriteMovies()
+    // 👇 AHORA LE PASAMOS EL userId A LAS LISTAS 👇
+    val peliculasFavoritas: StateFlow<List<MovieEntity>> = repository.getFavoriteMovies(userId)
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    val peliculasVistas: StateFlow<List<MovieEntity>> = repository.getWatchedMovies()
+    val peliculasVistas: StateFlow<List<MovieEntity>> = repository.getWatchedMovies(userId)
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     init {
@@ -48,7 +54,9 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 // 1. Pedimos las pelis
                 val nuevasPeliculas = repository.fetchPopularMovies(page = currentPage)
-                val pelisGuardadas = repository.getAllSavedMovies().first()
+
+                // 👇 AHORA SOLO COMPROBAMOS LAS PELIS DE ESTE USUARIO 👇
+                val pelisGuardadas = repository.getAllSavedMovies(userId).first()
 
                 // 2. Filtramos
                 val peliculasFiltradas = nuevasPeliculas.filter { nueva ->
@@ -69,8 +77,6 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
                 movies = movies + peliculasFiltradas
 
                 // 🚀 4. NUEVO: EL MOTOR TURBO
-                // Si después de filtrar nos quedan 3 cartas o menos, pedimos la siguiente página
-                // (El 'isNotEmpty' evita que entremos en bucle si TMDB no tiene más películas en el mundo)
                 if (movies.size <= 3 && nuevasPeliculas.isNotEmpty()) {
                     currentPage++
                     loadMovies() // 🔁 La función se llama a sí misma para seguir buscando
@@ -81,16 +87,16 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+
     // La nueva función mágica que decide qué hacer al deslizar
     fun handleSwipe(movie: MovieDto, isLiked: Boolean) {
         if (isLiked) {
             // Caso Derecha (Like): Guardamos como favorita (isWatched = 0)
             viewModelScope.launch {
-                repository.insertMovieToFavorites(movie)
+                repository.insertMovieToFavorites(movie, userId) // 👈 Pasamos el DNI
             }
         } else {
-            // 👇 NUEVO: Caso Izquierda (Dislike) 👇
-            // Guardamos como descartada (isWatched = 2) para que no vuelva a salir
+            // Caso Izquierda (Dislike)
             descartarPelicula(movie)
         }
 
@@ -99,28 +105,27 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
             movies = movies.drop(1)
         }
 
-        // 2. EL MOTOR INFINITO: Si nos quedan 3 cartas o menos, pedimos más a internet
+        // 2. EL MOTOR INFINITO
         if (movies.size <= 3) {
             currentPage++
             loadMovies()
         }
     }
+
     // Llamaremos a esta función cuando el usuario pulse en una película para ver sus detalles
     fun loadProvidersForMovie(movieId: Int) {
         viewModelScope.launch {
-            // Vaciamos la lista anterior para que no salgan logos de la peli anterior mientras carga
             movieProviders = emptyList()
-            // Pedimos los logos nuevos al repositorio
             movieProviders = repository.getMovieProviders(movieId)
         }
     }
+
     fun vaciarFavoritos() {
-        // Usamos viewModelScope.launch porque borrar en base de datos es una tarea pesada
-        // y hay que hacerla en un "hilo secundario" (en la sombra)
         viewModelScope.launch {
-            repository.deleteAllMovies()
+            repository.deleteAllMovies(userId) // 👈 Pasamos el DNI
         }
     }
+
     fun getProvidersForCard(movieId: Int) {
         if (!providersCache.containsKey(movieId)) {
             viewModelScope.launch {
@@ -129,30 +134,24 @@ class MovieViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+
     fun marcarComoVista(movieId: Int) {
         viewModelScope.launch {
-            repository.markAsWatched(movieId)
+            repository.markAsWatched(movieId, userId) // 👈 Pasamos el DNI
         }
     }
 
     fun vaciarVistas() {
         viewModelScope.launch {
-            repository.deleteWatchedMovies()
+            repository.deleteWatchedMovies(userId) // 👈 Pasamos el DNI
         }
     }
 
     fun descartarPelicula(movieDto: MovieDto) {
         viewModelScope.launch {
-            // La guardamos en la DB con el estado 2 (Descartada)
-            val entity = MovieEntity(
-                id = movieDto.id,
-                title = movieDto.title,
-                posterPath = movieDto.posterPath ?: "",
-                overview = movieDto.overview,
-                isWatched = 2 // 2 significa "No me la vuelvas a enseñar"
-            )
-            repository.insertMovieToFavorites(movieDto) // Primero la insertamos
-            repository.markAsDiscarded(movieDto.id)     // Luego la marcamos como descartada
+            // Primero la insertamos con el DNI, luego la marcamos como descartada con el DNI
+            repository.insertMovieToFavorites(movieDto, userId)
+            repository.markAsDiscarded(movieDto.id, userId)
         }
     }
 }

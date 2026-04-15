@@ -35,11 +35,12 @@ class MovieRepository(private val database: AppDatabase) {
         }
     }
 
-    // NUEVO: Función para guardar una película en Room
-    suspend fun insertMovieToFavorites(movieDto: MovieDto) {
+    // 👇 NUEVO: Añadimos userId para guardar la película a nombre de un usuario específico
+    suspend fun insertMovieToFavorites(movieDto: MovieDto, userId: String) {
         // Traducimos el DTO (Internet) a Entity (Base de Datos)
         val entity = MovieEntity(
             id = movieDto.id,
+            userId = userId, // 👈 Le pegamos el DNI del usuario a la entidad
             title = movieDto.title,
             posterPath = movieDto.posterPath ?: "",
             overview = movieDto.overview
@@ -47,26 +48,28 @@ class MovieRepository(private val database: AppDatabase) {
         // Usamos el DAO para guardarlo en Room
         database.movieDao().insertMovie(entity)
     }
-    fun getAllSavedMovies() = database.movieDao().getAllSavedMovies()
-    suspend fun deleteAllMovies() = database.movieDao().deleteAllMovies()
 
-    // Trae SOLO las que están pendientes de ver (isWatched = 0)
-    fun getFavoriteMovies() = database.movieDao().getFavoriteMovies()
+    // 👇 Actualizamos TODAS las lecturas para que pasen el userId al DAO 👇
+    fun getAllSavedMovies(userId: String) = database.movieDao().getAllSavedMovies(userId)
 
-    // Trae SOLO las que ya has visto (isWatched = 1)
-    fun getWatchedMovies() = database.movieDao().getWatchedMovies()
+    suspend fun deleteAllMovies(userId: String) = database.movieDao().deleteAllMovies(userId)
 
-    // El comando para cambiarla de lista
-    suspend fun markAsWatched(movieId: Int) {
-        database.movieDao().markAsWatched(movieId)
+    // Trae SOLO las que están pendientes de ver de ESE usuario (isWatched = 0)
+    fun getFavoriteMovies(userId: String) = database.movieDao().getFavoriteMovies(userId)
+
+    // Trae SOLO las que ya ha visto ESE usuario (isWatched = 1)
+    fun getWatchedMovies(userId: String) = database.movieDao().getWatchedMovies(userId)
+
+    // 👇 Los comandos para cambiar de lista también necesitan el userId 👇
+    suspend fun markAsWatched(movieId: Int, userId: String) {
+        database.movieDao().markAsWatched(movieId, userId)
     }
 
-    suspend fun deleteWatchedMovies() {
-        database.movieDao().deleteWatchedMovies()
+    suspend fun deleteWatchedMovies(userId: String) {
+        database.movieDao().deleteWatchedMovies(userId)
     }
 
-    suspend fun markAsDiscarded(movieId: Int) {
-        database.movieDao().markAsDiscarded(movieId)
+    suspend fun markAsDiscarded(movieId: Int, userId: String) {
+        database.movieDao().markAsDiscarded(movieId, userId)
     }
-
 }

@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 data class MovieEntity(
     @PrimaryKey
     val id: Int,
+    val userId: String,
     val title: String,
     val posterPath: String?,
     val isLiked: Boolean = false,
