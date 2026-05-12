@@ -25,15 +25,15 @@ import com.mario.plotswipe.data.remote.ProviderInfo
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(viewModel: MovieViewModel, movieId: Int, onBackClick: () -> Unit) {
-    // 🧠 AHORA LEEMOS LAS DOS CAJAS
+    // LEE LAS DOS CAJAS
     val favoriteMovies by viewModel.peliculasFavoritas.collectAsState(initial = emptyList())
     val watchedMovies by viewModel.peliculasVistas.collectAsState(initial = emptyList())
 
     // Buscamos primero en favoritas, y si no está (devuelve null), buscamos en vistas
     val movie = favoriteMovies.find { it.id == movieId } ?: watchedMovies.find { it.id == movieId }
 
-    // 🧠 Comprobamos si la película ya está marcada como vista (isWatched == 1)
-    val yaEstaVista = movie?.isWatched == 1
+    // Compruebo si la película está dentro de la lista de las que ya has visto
+    val yaEstaVista = watchedMovies.any { it.id == movieId }
 
     // ... (El resto de tus estados showDialog siguen igual aquí) ...
     // 🧠 ESTADOS PARA EL DIÁLOGO DE CONFIRMACIÓN

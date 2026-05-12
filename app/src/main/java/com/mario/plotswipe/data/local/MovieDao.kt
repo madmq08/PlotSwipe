@@ -1,42 +1,64 @@
 package com.mario.plotswipe.data.local
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MovieDao {
+
+    // 1. Insertar información técnica (Si ya existe, se ignora)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMovieData(movie: MovieEntity)
+
+    // 2. Insertar relación del usuario (Si cambia, se actualiza)
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertMovie(movie: MovieEntity)
+    suspend fun insertUserRelation(relation: UserMovieCrossRef)
+    @Transaction
+    suspend fun saveMovieForUser(movie: MovieEntity, userId: String) {
+        insertMovieData(movie)
+        insertUserRelation(UserMovieCrossRef(userId = userId, movieId = movie.id))
+    }
 
-    // 👇 A todas las consultas les exigimos ahora que nos pasen el userId (DNI) 👇
 
-    @Query("SELECT * FROM movies WHERE userId = :userId")
+    @Query("""
+        SELECT * FROM movies 
+        INNER JOIN user_movie_cross_ref ON movies.id = user_movie_cross_ref.movieId 
+        WHERE user_movie_cross_ref.userId = :userId
+    """)
     suspend fun getAllMovies(userId: String): List<MovieEntity>
 
-    @Query("SELECT * FROM movies WHERE userId = :userId")
+    @Query("""
+        SELECT * FROM movies 
+        INNER JOIN user_movie_cross_ref ON movies.id = user_movie_cross_ref.movieId 
+        WHERE user_movie_cross_ref.userId = :userId
+    """)
     fun getAllSavedMovies(userId: String): Flow<List<MovieEntity>>
 
-    @Query("DELETE FROM movies WHERE userId = :userId")
-    suspend fun deleteAllMovies(userId: String)
-
-    // Solo las que están pendientes de ver de ESE usuario
-    @Query("SELECT * FROM movies WHERE isWatched = 0 AND userId = :userId")
+    // Solo las favoritas/pendientes (isWatched = 0)
+    @Query("""
+        SELECT * FROM movies 
+        INNER JOIN user_movie_cross_ref ON movies.id = user_movie_cross_ref.movieId 
+        WHERE user_movie_cross_ref.userId = :userId AND user_movie_cross_ref.isWatched = 0
+    """)
     fun getFavoriteMovies(userId: String): Flow<List<MovieEntity>>
 
-    // Solo las que ya ha visto ESE usuario
-    @Query("SELECT * FROM movies WHERE isWatched = 1 AND userId = :userId")
+    // Solo las vistas (isWatched = 1)
+    @Query("""
+        SELECT * FROM movies 
+        INNER JOIN user_movie_cross_ref ON movies.id = user_movie_cross_ref.movieId 
+        WHERE user_movie_cross_ref.userId = :userId AND user_movie_cross_ref.isWatched = 1
+    """)
     fun getWatchedMovies(userId: String): Flow<List<MovieEntity>>
 
-    // Actualizamos el estado SOLO para la peli de ESE usuario
-    @Query("UPDATE movies SET isWatched = 1 WHERE id = :movieId AND userId = :userId")
+    @Query("UPDATE user_movie_cross_ref SET isWatched = 1 WHERE movieId = :movieId AND userId = :userId")
     suspend fun markAsWatched(movieId: Int, userId: String)
 
-    @Query("DELETE FROM movies WHERE isWatched = 1 AND userId = :userId")
-    suspend fun deleteWatchedMovies(userId: String)
-
-    @Query("UPDATE movies SET isWatched = 2 WHERE id = :movieId AND userId = :userId")
+    @Query("UPDATE user_movie_cross_ref SET isWatched = 2 WHERE movieId = :movieId AND userId = :userId")
     suspend fun markAsDiscarded(movieId: Int, userId: String)
+
+    @Query("DELETE FROM user_movie_cross_ref WHERE userId = :userId")
+    suspend fun deleteAllMovies(userId: String)
+
+    @Query("DELETE FROM user_movie_cross_ref WHERE isWatched = 1 AND userId = :userId")
+    suspend fun deleteWatchedMovies(userId: String)
 }
